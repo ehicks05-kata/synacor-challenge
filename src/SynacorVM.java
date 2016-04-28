@@ -108,9 +108,9 @@ public class SynacorVM
             else
                 return value;
         }
+
         // convert literal to register
         value -= 32768;
-//        value -= 1; // 0 based vs 1 based
         if (value <= 7)
             return registers[value];
 
@@ -130,10 +130,6 @@ public class SynacorVM
      */
     private void halt()
     {
-//        System.out.println("\r\nUnique Commands Run:");
-//        Collections.sort(commandsRun);
-//        commandsRun.forEach(System.out::println);
-
         System.out.println("\r\nCommands Log:");
         for (String logEntry : log)
             System.out.println(logEntry.replaceAll("\n", " "));
