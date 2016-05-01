@@ -366,11 +366,20 @@ public class SynacorVM
      * this means that you can safely read whole lines from the keyboard and
      * trust that they will be fully read
      */
+    List<Character> charBuffer = new ArrayList<>();
     private void in(int a)
     {
-        System.out.println("$ ");
-        String in = new Scanner(System.in).nextLine();
-        int value = in.charAt(0);
+        int value;
+        if (charBuffer.size() == 0)
+        {
+            System.out.println("$ ");
+            String in = new Scanner(System.in).nextLine();
+            for (Character aChar : in.toCharArray())
+                charBuffer.add(aChar);
+            charBuffer.add('\n');
+        }
+
+        value = charBuffer.remove(0);
         saveValue(a, value);
     }
 
