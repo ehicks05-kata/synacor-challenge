@@ -1,17 +1,28 @@
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.*;
 
-public class SynacorVM
+public class SynacorVM implements Serializable
 {
     int[] memory = new int[32768];
     private int[] registers = new int[8];
     private Stack<Integer> stack = new Stack<>();
-    private List<String> log = new ArrayList<>();
+//    private List<String> log = new ArrayList<>();
     private static List<String> commandNames = Arrays.asList("halt", "set", "push", "pop", "eq", "gt", "jmp", "jt",
             "jf", "add", "mult", "mod", "and", "or", "not", "rmem", "wmem", "call", "ret", "out", "in", "noop");
 
+    private List<Character> inputBuffer = new ArrayList<>();
+    public List<Character> outputBuffer = new ArrayList<>();
+    private int commandIndex = 0;
+
     public void run()
     {
-        int commandIndex = 0;
+        if (outputBuffer.size() > 0)
+        {
+            outputBuffer.forEach(System.out::print);
+        }
+
         while (commandIndex > -1)
         {
             final int COMMAND = memory[commandIndex];
@@ -66,7 +77,7 @@ public class SynacorVM
         logEntry += "  |  ";
         for (Integer integer : stack)
             logEntry += String.format("%5s ", integer);
-        log.add(logEntry);
+//        log.add(logEntry);
     }
 
     private void saveValue(int address, int value)
@@ -122,6 +133,19 @@ public class SynacorVM
         return ((value >= 1 && value <= 8) || (value >= 32768 && value <= 32775));
     }
 
+    private void saveState()
+    {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("eric.sav"));)
+        {
+            oos.writeObject(this);
+            oos.close();
+        }
+        catch (Exception e)
+        {
+
+        }
+    }
+
     // ---- OPCODES ----
 
     /**
@@ -130,9 +154,9 @@ public class SynacorVM
      */
     private void halt()
     {
-        System.out.println("\r\nCommands Log:");
-        for (String logEntry : log)
-            System.out.println(logEntry.replaceAll("\n", " "));
+//        System.out.println("\r\nCommands Log:");
+//        for (String logEntry : log)
+//            System.out.println(logEntry.replaceAll("\n", " "));
 
         System.exit(0);
     }
@@ -350,7 +374,9 @@ public class SynacorVM
      */
     private void out(int a)
     {
-        System.out.print(getCharacterFromAsciiCode(a));
+        char out = getCharacterFromAsciiCode(a);
+        outputBuffer.add(out);
+        System.out.print(out);
     }
 
     private char getCharacterFromAsciiCode(int a)
@@ -366,20 +392,30 @@ public class SynacorVM
      * this means that you can safely read whole lines from the keyboard and
      * trust that they will be fully read
      */
-    List<Character> charBuffer = new ArrayList<>();
     private void in(int a)
     {
         int value;
-        if (charBuffer.size() == 0)
+        if (inputBuffer.size() == 0)
         {
             System.out.println("$ ");
             String in = new Scanner(System.in).nextLine();
+
+            if (in.equals("save"))
+            {
+                saveState();
+                halt();
+            }
+
             for (Character aChar : in.toCharArray())
-                charBuffer.add(aChar);
-            charBuffer.add('\n');
+            {
+                inputBuffer.add(aChar);
+                outputBuffer.add(aChar);
+            }
+            inputBuffer.add('\n');
+            outputBuffer.add('\n');
         }
 
-        value = charBuffer.remove(0);
+        value = inputBuffer.remove(0);
         saveValue(a, value);
     }
 

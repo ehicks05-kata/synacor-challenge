@@ -1,4 +1,4 @@
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
@@ -6,19 +6,45 @@ import java.nio.file.Paths;
 
 public class SynacorDemo
 {
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args)
     {
-        SynacorVM vm = new SynacorVM();
-        vm.memory = loadProgram();
-//        dumpMemory(vm);
-        vm.run();
+        if (args.length > 0)
+            loadSaveGame(args[0]);
+        else
+        {
+            SynacorVM vm = new SynacorVM();
+            vm.memory = loadProgram();
+            vm.run();
+        }
     }
 
-    private static int[] loadProgram() throws IOException
+    private static void loadSaveGame(String filename)
+    {
+        try
+        {
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(filename));
+            SynacorVM vm = (SynacorVM) ois.readObject();
+            vm.run();
+        }
+        catch (IOException | ClassNotFoundException e)
+        {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    private static int[] loadProgram()
     {
         int[] program = new int[32768];
+        byte[] programBytes = new byte[0];
+        try
+        {
+            programBytes = Files.readAllBytes(Paths.get("challenge.bin"));
+        }
+        catch (IOException e)
+        {
+            System.out.println(e.getMessage());
+        }
 
-        byte[] programBytes = Files.readAllBytes(Paths.get("challenge.bin"));
         ByteBuffer byteBuffer = ByteBuffer.wrap(programBytes);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
